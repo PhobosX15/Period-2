@@ -12,11 +12,12 @@ import ast
 # unix datetime
 base = pd.Timestamp("1970-01-01")
 CHUNK_SIZE = 1000000
-REVIEW_DROP = 0
+REVIEW_USER_DROP = 100
+REVIEW_RESTAURANT_DROP = 100
 ROWS_LIMIT = int(1e7)
-RESTAURANTS_PATH = 'dataset/yelp_academic_dataset_business.json'
-REVIEWS_PATH = 'dataset/yelp_academic_dataset_review.json'
-USERS_PATH = 'dataset/yelp_academic_dataset_user.json'
+RESTAURANTS_PATH = 'data/yelp_dataset/yelp_academic_dataset_business.json'
+REVIEWS_PATH = 'data/yelp_dataset/yelp_academic_dataset_review.json'
+USERS_PATH = 'data/yelp_dataset/yelp_academic_dataset_user.json'
 
 # https://www.kaggle.com/zolboo/recommender-systems-knn-svd-nn-keras
 # Function that extract keys from the nested dictionary
@@ -91,7 +92,7 @@ def load_data(train_percent, val_percent, test_percent):
     users = pd.DataFrame(json_data)
 
     # users = pd.read_csv(USERS_PATH)
-    users = users[users['review_count'] > REVIEW_DROP]
+    users = users[users['review_count'] > REVIEW_USER_DROP]
     users['user_id'] = users['user_id'].astype('category')
     users['user_id_num'] = users['user_id'].cat.codes
     users = users[['user_id', 'user_id_num', 'review_count']]
@@ -113,6 +114,7 @@ def load_data(train_percent, val_percent, test_percent):
 
     businesses = pd.DataFrame(json_data)
     restaurants = businesses[businesses['categories'].str.contains('Restaurants', na=False)]
+    restaurants = restaurants[restaurants['review_count'] > REVIEW_RESTAURANT_DROP]  # filter out unpopular restaurants
 
     # restaurants = pd.read_json(RESTAURANTS_PATH)
     restaurants['business_id'] = restaurants['business_id'].astype('category')
@@ -148,9 +150,9 @@ def load_data(train_percent, val_percent, test_percent):
     print("REVIEWS.DROP() -------------------------------------------------------------------")
     print(reviews.head())
 
-    pickle.dump(user_id_to_num, open('dataset/user_id_to_num.pkl', 'wb'))
-    pickle.dump(rest_id_to_num, open('dataset/rest_id_to_num.pkl', 'wb'))
-    np.save('dataset/data.npy', reviews.values)
+    pickle.dump(user_id_to_num, open('data/yelp_dataset_preprocessed/user_id_to_num.pkl', 'wb'))
+    pickle.dump(rest_id_to_num, open('data/yelp_dataset_preprocessed/rest_id_to_num.pkl', 'wb'))
+    np.save('data/yelp_dataset_preprocessed/data.npy', reviews.values)
 
     training = reviews.sample(frac=train_percent)
 
